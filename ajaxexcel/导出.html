@@ -1,0 +1,133 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>导出excel</title>
+    <script>
+
+        function CreateXmlHttpRequest() {
+            var xmlHttp;
+            try {
+                xmlHttp = new XMLHttpRequest();
+            } catch (e) {
+                try {
+                    xmlHttp = new ActiveXObject("MSXML2.xmlHttp");
+                } catch (e) {
+                    try {
+                        xmlHttp = new ActiveXObject("Microsoft.xmlHttp");
+                    } catch (e) {
+                        alert("你的浏览器不支持xmlHttp对象，请升级到IE6以上版本！");
+                        xmlHttp = false;
+                    }
+                }
+            }
+            var me = this;
+            this.Method = "POST";
+            this.Url = "";
+            this.Async = true;
+            this.Arg = "";
+            this.ContentType = "application/x-www-form-urlencoded";
+            this.Accept = "";
+            this.CallBack = function () { };
+            this.Loading = function () { };
+            this.Error = function () { };
+            this.Complete = function () { };
+
+            this.Send = function () {
+                try {
+                    if (this.Url === "") {
+                        return false;
+                    }
+                    if (!xmlHttp) {
+                    }
+                    xmlHttp.open(this.Method, this.Url, this.Async);
+                    if (this.Method === "POST") {
+                        xmlHttp.setRequestHeader("Content-Type", me.ContentType);
+                        if (this.Accept !== "") {
+                            xmlHttp.setRequestHeader("Accept", me.Accept);
+                        }
+                    }
+                    xmlHttp.onreadystatechange = function () {
+                        if (xmlHttp.readyState === 4) {
+                            var result = false;
+                            if (xmlHttp.status === 200) {
+                                result = xmlHttp.responseText;
+                            }
+                            xmlHttp = null;
+
+                            me.CallBack(result);
+                            me.Complete();
+                        }
+                        else {
+                            me.Loading();
+                        }
+                    }
+                    if (this.Method === "POST") {
+                        xmlHttp.send(this.Arg);
+                    }
+                    else {
+                        xmlHttp.send(null);
+                    }
+                } catch (ex) {
+                    me.Error(ex);
+                    me.Complete();
+                }
+                return false;
+            }
+        }
+
+        function sendPostRequest(targetUrl, parameters, beforeSendCallback, successCallback, errorCallback, completeCallback) {
+            var ajax = new CreateXmlHttpRequest();
+            ajax.Method = "POST";
+            ajax.ContentType = "application/json; charset=utf-8";
+            ajax.Accept = "application/json, text/javascript, */*; q=0.01";
+            ajax.Url = targetUrl;
+            ajax.Async = true;
+            ajax.Arg = parameters;
+            ajax.CallBack = successCallback;
+            ajax.Error = errorCallback;
+            ajax.Loading = beforeSendCallback;
+            ajax.Complete = completeCallback;
+            ajax.Send();
+            return false;
+        }
+
+        function excel() {
+            var btn = document.getElementById("btndownload");
+            var url = "http://localhost:54769/api/values/exportuser";
+            var para = JSON.stringify({ Name: "嘻嘻嘻" });
+            sendPostRequest(url, para, function () {
+                console.log("下载准备中");
+                btn.setAttribute("disabled", "disabled");
+            }, function (data) {
+                if (data) {
+                    data = JSON.parse(data);
+                    console.log("下载准备成功");
+                    var iframe = document.getElementById("excel");
+                    if (iframe == null || iframe.length <= 0) {
+                        iframe = document.createElement("iframe");
+                        iframe.setAttribute("width", "0px");
+                        iframe.setAttribute("height", "0px");
+                        iframe.setAttribute("id", "excel");
+                        iframe.setAttribute("src", "http://localhost:54769/api/values/export/" + data.Id);
+                        document.body.appendChild(iframe);
+                    } else {
+                        iframe.setAttribute("src", "http://localhost:54769/api/values/export/" + data.Id);
+                    }
+                }
+                return false;
+            }, function () {
+                console.log("下载出错了");
+                btn.removeAttribute("disabled");
+            }, function () {
+                console.log("下载准备完成");
+                btn.removeAttribute("disabled");
+            });
+            return false;
+        }
+    </script>
+</head>
+<body>
+    <input value="导出" type="button" onclick="excel()" id="btndownload" />
+</body>
+</html>
